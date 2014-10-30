@@ -221,7 +221,7 @@ int v4l2port_init(v4l2port_t *video)
 	int fd;
 	struct v4l2_format fmt;
 	struct v4l2_fmtdesc fmtdesc;
-
+	struct v4l2_streamparm *streamparm;
 
 	if (video->init_flag)
 	{
@@ -284,7 +284,21 @@ int v4l2port_init(v4l2port_t *video)
 		goto __error;
 	}
 
-	v4l2port_set_param(video, video->profile.fps);
+
+
+	streamparm = &video->streamparm;
+	memset(streamparm, 0, sizeof(struct v4l2_streamparm));
+
+	streamparm->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	streamparm->parm.capture.timeperframe.numerator = 1;
+	streamparm->parm.capture.timeperframe.denominator = video->profile.fps;
+
+	if (xioctl(fd, VIDIOC_S_PARM, streamparm) == -1)
+	{
+		error_type = V4L2_ERROR_VIDIOC_S_PARM;
+		goto __error;
+	}
+
 
 	video->fd = fd;
 	video->init_flag = 1;
