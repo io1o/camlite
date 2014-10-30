@@ -175,6 +175,7 @@ int video_manager_init_video(int index)
 		data->pevent = NULL;
 	}
 
+	
 	if (v4l2port_init(data->video) == -1)
 	{
 		LOGINFO("video device init failure(%s:%s)\n",
@@ -182,6 +183,7 @@ int video_manager_init_video(int index)
 				v4l2port_strerrno(data->video));
 		return -1;
 	}
+	
 
 	return 0;
 }

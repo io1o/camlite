@@ -76,10 +76,7 @@ int main(int argc, char *argv[])
 
 	video_manager_init(g_base, (v4l2_read_callback)camhttp_on_video_read, timeout);
 
-	if (video_manager_add(device, width, height, fps) == -1)
-	{
-		exit(EXIT_FAILURE);
-	}
+	video_manager_add(device, width, height, fps);
 
 
 	while (pevent_base_loop(g_base, -1) != -1);

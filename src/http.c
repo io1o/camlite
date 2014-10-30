@@ -367,13 +367,13 @@ void http_response_set_data(http_response_t *response, char *buf, int size)
 	response->extra_size = size;
 }
 
-void http_response_compile(http_response_t *response, http_client_t *client)
+int http_response_compile(http_response_t *response, http_client_t *client)
 {
 	int i;
 	int has_type = 0;
 	int has_connection = 0;
 	char *send_string;
-
+	int ret;
 
 	send_string = fmalloc(HTTP_MAX_STRING_SIZE + 1);
 
@@ -427,16 +427,19 @@ void http_response_compile(http_response_t *response, http_client_t *client)
 	}
 
 
-	if (http_client_send(client, send_string, strlen(send_string)) != -1)
+
+	ret = http_client_send(client, send_string, strlen(send_string));
+	if (ret != -1 && response->extra_size)
 	{
-		if (response->extra_size)
-			http_client_send(client, response->extra_buf, response->extra_size);
+		ret = http_client_send(client, response->extra_buf, response->extra_size);
 	}
 
 	//LOGINFO("send_string:%s\n", send_string);
 
 	free(send_string);
 	http_response_free(response);
+
+	return ret;
 }
 
 static int set_nonblocking(int fd)
@@ -540,7 +543,10 @@ void on_read(http_client_t *client)
 	response = client->service->request_callback(&client->request);
 	if (response != NULL)
 	{
-		http_response_compile(response, client);
+		if (http_response_compile(response, client) == -1)
+		{
+			return; //already free
+		}
 	}
 	
 	client->request_header_compile = 0;
@@ -810,7 +816,11 @@ int http_server_keeplive_delay_iter(http_server_t *service,
 			response = callback(client, ptr, client->delay_ptr);
 			if (response != NULL)
 			{
-				http_response_compile(response, client);
+				if (http_response_compile(response, client) == -1)
+				{
+					continue; //already free
+				}
+
 			}
 
 			if (!client->writing && !client->delay_ptr)

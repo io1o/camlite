@@ -4,6 +4,6 @@ Depends: libc
 Source: package/camlite
 Section: utils
 Architecture: ar71xx
-Installed-Size: 15601
+Installed-Size: 15642
 Description:  This package contains an utility for configuring the Broadcom BCM5325E/536x 
  based switches.

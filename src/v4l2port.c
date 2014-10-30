@@ -223,7 +223,6 @@ int v4l2port_init(v4l2port_t *video)
 	struct v4l2_fmtdesc fmtdesc;
 
 
-
 	if (video->init_flag)
 	{
 		v4l2port_uninit(video);
@@ -235,10 +234,9 @@ int v4l2port_init(v4l2port_t *video)
         error_type = V4L2_ERROR_CAN_NOT_OPEN;
 		goto __error;
     }
-	
-	video->fd = fd;
 
-    if(xioctl(video->fd, VIDIOC_QUERYCAP, &video->cap) == -1)
+
+    if(xioctl(fd, VIDIOC_QUERYCAP, &video->cap) == -1)
 	{
 		if(EINVAL == errno)
 		{
@@ -266,7 +264,7 @@ int v4l2port_init(v4l2port_t *video)
 	fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 	while(fmtdesc.index < sizeof(video->fmtdesc) / sizeof(struct v4l2_fmtdesc)
-		&& ioctl(video->fd, VIDIOC_ENUM_FMT, &fmtdesc) != -1)
+		&& ioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc) != -1)
 	{
 		memcpy(&video->fmtdesc[fmtdesc.index], &fmtdesc, sizeof(struct v4l2_fmtdesc));
 		fmtdesc.index++;
@@ -280,7 +278,7 @@ int v4l2port_init(v4l2port_t *video)
 	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
 	fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
-	if (-1 == xioctl(video->fd, VIDIOC_S_FMT, &fmt))
+	if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
 	{
 		error_type = V4L2_ERROR_VIDIOC_S_FMT;
 		goto __error;
@@ -288,6 +286,7 @@ int v4l2port_init(v4l2port_t *video)
 
 	v4l2port_set_param(video, video->profile.fps);
 
+	video->fd = fd;
 	video->init_flag = 1;
 
 	LOGDEBUG("v4l2_init('%s') success\n", video->profile.device);
@@ -295,7 +294,8 @@ int v4l2port_init(v4l2port_t *video)
 	return 0;
 
 __error:
-	v4l2port_uninit(video);
+	if (fd > 0)
+		close(fd);
 
 	video->last_errno = errno;
 	video->last_error = error_type;
